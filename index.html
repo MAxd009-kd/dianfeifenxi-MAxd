@@ -24,8 +24,10 @@
       font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; background: var(--bg); color: var(--text); }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden; }
     button, input { font: inherit; }
+    input, button { touch-action: manipulation; }
     button { cursor: pointer; }
     .shell { max-width: 1180px; margin: 0 auto; padding: 34px 22px 64px; }
     .hero { margin-bottom: 20px; }
@@ -41,7 +43,7 @@
     .btn-primary { border-color: var(--brand); background: var(--brand); color: #fff; }
     .btn-primary:hover { background: var(--brand-dark); }
     .btn:disabled { opacity: .55; cursor: not-allowed; }
-    .suggestions { position: absolute; top: calc(100% + 8px); left: 0; right: 0; max-height: 390px; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); display: none; }
+    .suggestions { position: absolute; top: calc(100% + 8px); left: 0; right: 0; max-height: min(390px, 55vh); overflow-y: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); display: none; }
     .suggestions.open { display: block; }
     .suggestion { width: 100%; padding: 11px 14px; display: flex; gap: 12px; justify-content: space-between; align-items: center; border: 0; border-bottom: 1px solid #edf1f6; background: transparent; color: var(--text); text-align: left; }
     .suggestion:last-child { border-bottom: 0; }
@@ -101,7 +103,7 @@
     .kv-item { min-width: 0; }
     .kv-label { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
     .kv-value { line-height: 1.55; word-break: break-word; }
-    .table-wrap { margin-top: 14px; overflow-x: auto; }
+    .table-wrap { margin-top: 14px; overflow-x: auto; overscroll-behavior-inline: contain; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { padding: 9px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid #e8edf3; white-space: nowrap; }
     th { background: #f2f6fb; color: #445066; font-weight: 700; }
@@ -151,15 +153,67 @@
       .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 600px) {
-      .shell { padding: 24px 14px 44px; }
-      .search-row { grid-template-columns: 1fr 1fr; }
+      .shell { padding: max(18px, env(safe-area-inset-top)) 12px calc(36px + env(safe-area-inset-bottom)); }
+      .hero { margin-bottom: 14px; }
+      h1 { font-size: 27px; }
+      .subtitle { font-size: 14px; line-height: 1.65; }
+      .search-panel { padding: 12px; border-radius: 14px; }
+      .search-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
       .search-wrap { grid-column: 1 / -1; }
-      .btn { padding: 0 12px; }
+      .search-input, .btn { min-height: 48px; }
+      .search-input { font-size: 16px; padding: 0 12px; }
+      .btn { height: 48px; padding: 0 16px; }
+      .btn-primary { width: 100%; }
+      #clearBtn { min-width: 84px; }
+      .suggestions { max-height: 52vh; }
+      .suggestion { min-height: 52px; padding: 12px; align-items: flex-start; }
+      .suggestion-name { white-space: normal; overflow: visible; line-height: 1.45; }
+      .suggestion-meta { margin-top: 2px; }
+      .overview { margin-top: 16px; }
+      .overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .stat { padding: 12px; border-radius: 12px; }
+      .stat-value { font-size: 21px; }
+      .empty { margin-top: 14px; padding: 28px 14px; }
+      #result { margin-top: 16px; }
+      .company-head { padding: 17px 15px; border-radius: 14px; }
       .company-top { display: block; }
-      .print-btn { margin-top: 14px; }
-      .overview-grid, .summary-grid, .timeline, .kv, .source-list, .constraint-grid, .comparison-grid, .phase-grid { grid-template-columns: 1fr; }
+      .company-title { font-size: 22px; word-break: break-word; }
+      .aliases { line-height: 1.55; }
+      .print-btn { display: none; }
+      .coverage { margin-top: 14px; gap: 6px; }
+      .chip { min-height: 30px; padding: 5px 9px; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+      .summary-card { padding: 12px; border-radius: 12px; }
+      .summary-card .value { font-size: 15px; }
+      .summary-card .sub { font-size: 11px; }
+      .section { margin-top: 12px; border-radius: 13px; }
+      .section-head { padding: 14px; align-items: flex-start; flex-direction: column; gap: 5px; }
+      .section-head h2 { font-size: 17px; }
+      .section-note { line-height: 1.5; }
+      .section-body { padding: 14px; }
+      .timeline, .kv, .source-list, .constraint-grid, .comparison-grid, .phase-grid { grid-template-columns: 1fr; }
       .time-item { min-height: 90px; }
-      .section-head { align-items: flex-start; flex-direction: column; }
+      .assessment { padding: 14px; }
+      .assessment-head { display: block; }
+      .assessment-tags { justify-content: flex-start; margin-top: 9px; }
+      .assessment-text { font-size: 14px; line-height: 1.8; }
+      .comparison-grid { gap: 8px; }
+      .comparison { padding: 11px; }
+      .phase-value { font-size: 20px; }
+      .record summary { min-height: 52px; padding: 12px; align-items: flex-start; }
+      .record summary::after { padding-top: 2px; }
+      .record-content { padding: 12px; }
+      .kv { gap: 10px; }
+      .kv-item { padding-bottom: 8px; border-bottom: 1px solid #edf1f6; }
+      .kv-item:last-child { border-bottom: 0; }
+      .table-wrap { margin-left: -14px; margin-right: -14px; padding: 0 14px 4px; }
+      table { min-width: 620px; font-size: 12px; }
+      th, td { padding: 9px 8px; }
+      footer { margin-top: 17px; padding: 0 6px; }
+    }
+    @media (max-width: 380px) {
+      .overview-grid, .summary-grid { grid-template-columns: 1fr; }
+      .shell { padding-left: 10px; padding-right: 10px; }
     }
     @media print {
       body { background: #fff; }
