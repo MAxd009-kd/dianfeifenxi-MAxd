@@ -1,4 +1,4 @@
-const CACHE_NAME = "hourly-data-tool-v72";
+const CACHE_NAME = "hourly-data-tool-v73";
 const APP_ASSETS = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const APP_ASSETS = [
   "./image-ocr.js",
   "./tou-data.js",
   "./tou-template.js",
+  "./report.js",
   "./tou-analysis.js",
   "./jszip.min.js",
   "./pdf.worker.min.js",

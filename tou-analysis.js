@@ -129,6 +129,7 @@
   const capacityDemandNote = document.querySelector("#tou-capacity-demand-note");
   const termDownloadButton = document.querySelector("#download-tou-term");
   const spotDownloadButton = document.querySelector("#download-tou-spot");
+  const customerReportButton = document.querySelector("#download-customer-report");
   const note = document.querySelector("#tou-note");
   const dataViewSelect = document.querySelector("#tou-data-view");
   const tabs = [...document.querySelectorAll("[data-tou-tab]")];
@@ -937,6 +938,21 @@
       : "当前企业没有落在模板覆盖月份内的月度电量，暂不能计算节省。";
     recommendation.classList.toggle("is-saving", totals[4] > 0 && monthIndexes.length > 0);
     recommendation.classList.toggle("is-costlier", totals[4] <= 0 && monthIndexes.length > 0);
+    if (customerReportButton) customerReportButton.disabled = !monthIndexes.length;
+  }
+
+  function downloadCustomerReport() {
+    const snapshot = getAnalysisSnapshot();
+    if (!globalThis.TimeGridReport || !snapshot.months.length) {
+      note.textContent = "当前没有可生成客户报告的测算数据。";
+      return;
+    }
+    globalThis.TimeGridReport.downloadSavingsReport(snapshot, {
+      sellerName: "坤电",
+      productName: "时能智析 TimeGrid AI",
+      developer: "MAxd-KD",
+    });
+    note.textContent = `已生成 ${snapshot.company} 的坤电客户报告，可直接打开或打印为PDF。`;
   }
 
   function getAnalysisSnapshot() {
@@ -1039,6 +1055,7 @@
   alternativeMarkupInput.addEventListener("input", refreshAll);
   termDownloadButton?.addEventListener("click", () => downloadBasePriceWorkbook("term"));
   spotDownloadButton?.addEventListener("click", () => downloadBasePriceWorkbook("spot"));
+  customerReportButton?.addEventListener("click", downloadCustomerReport);
   templateButton.addEventListener("click", chooseTemplateFile);
   templateInput.addEventListener("change", async () => {
     const [file] = templateInput.files;
