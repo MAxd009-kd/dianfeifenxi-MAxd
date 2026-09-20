@@ -941,18 +941,24 @@
     if (customerReportButton) customerReportButton.disabled = !monthIndexes.length;
   }
 
-  function downloadCustomerReport() {
+  async function downloadCustomerReport() {
     const snapshot = getAnalysisSnapshot();
     if (!globalThis.TimeGridReport || !snapshot.months.length) {
       note.textContent = "当前没有可生成客户报告的测算数据。";
       return;
     }
-    globalThis.TimeGridReport.downloadSavingsReport(snapshot, {
-      sellerName: "坤电",
-      productName: "时能智析 TimeGrid AI",
-      developer: "MAxd-KD",
-    });
-    note.textContent = `已生成 ${snapshot.company} 的坤电客户报告，可直接打开或打印为PDF。`;
+    customerReportButton.disabled = true;
+    customerReportButton.textContent = "正在生成PDF…";
+    try {
+      await globalThis.TimeGridReport.downloadSavingsReport(snapshot);
+      note.textContent = `已下载 ${snapshot.company} 的时能智析购电成本测算PDF报告。`;
+    } catch (error) {
+      console.error(error);
+      note.textContent = `PDF报告生成失败：${error.message || "请稍后重试"}`;
+    } finally {
+      customerReportButton.disabled = false;
+      customerReportButton.textContent = "下载PDF报告";
+    }
   }
 
   function getAnalysisSnapshot() {
