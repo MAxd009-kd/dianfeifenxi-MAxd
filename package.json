@@ -1,0 +1,13 @@
+{
+  "name": "timegrid-ai",
+  "version": "5.2.0",
+  "private": true,
+  "description": "时能智析 TimeGrid AI — 企业24小时分时用电与售电套餐分析工具",
+  "author": "MAxd-KD",
+  "license": "MIT",
+  "scripts": {
+    "test": "node tests/validate-release.js",
+    "update:market": "node scripts/update-official-data.js --source market --input official-input/market.xlsx",
+    "update:grid": "node scripts/update-official-data.js --source grid --input official-input/grid-update.json"
+  }
+}
