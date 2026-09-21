@@ -63,9 +63,22 @@ const SOURCE_FAMILY_LABELS = {
   long: "逐时明细表",
   wide: "96点横向表",
   "monthly-matrix": "月度24小时Excel",
-  image: "24小时数据图片",
   bill: "国网PDF电费单",
 };
+
+function fileBaseName(fileName) {
+  return String(fileName || "电力用户").replace(/\.[^.]+$/, "").trim() || "电力用户";
+}
+
+function normalizeSourceSheet(source, sheet) {
+  const normalized = HourlyEngine.normalizeSourceSheet(sheet);
+  if (normalized.sourceLayout !== "monthly-matrix") return normalized;
+  return HourlyEngine.convertMonthlyMatrixRows(sheet.rows, {
+    layout: HourlyEngine.detectMonthlyMatrix(sheet.rows),
+    name: normalized.name,
+    companyName: fileBaseName(source.file?.name),
+  });
+}
 
 fileInput.addEventListener("change", () => {
   const files = [...fileInput.files];
@@ -102,7 +115,7 @@ filterCompany.addEventListener("change", () => currentSheet && processCurrentShe
 downloadCurveButton.addEventListener("click", downloadCurvePng);
 
 async function loadFiles(files) {
-  const supportedExtensions = new Set(["xls", "xlsx", "csv", "tsv", "pdf", "png", "jpg", "jpeg", "webp"]);
+  const supportedExtensions = new Set(["xls", "xlsx", "csv", "tsv", "pdf"]);
   sourceFiles = files;
   parsedSources = [];
   currentSheet = null;
@@ -130,7 +143,7 @@ async function loadFiles(files) {
 
   const readableEntries = fileEntries.filter((entry) => !entry.isError);
   if (!readableEntries.length) {
-    showStatus("请选择 Excel、CSV、TSV、国网PDF电费账单或清晰的分时数据图片。", true);
+    showStatus("请选择 Excel、CSV、TSV 或国网PDF电费账单。", true);
     return;
   }
 
@@ -141,10 +154,7 @@ async function loadFiles(files) {
     showStatus(`正在读取第 ${index + 1}/${readableEntries.length} 个文件：${entry.file.name}`);
 
     try {
-      const parsed = await parseFile(entry.file, entry.extension, (message) => {
-        entry.status = formatImageProgress(message);
-        renderFileList();
-      });
+      const parsed = await parseFile(entry.file, entry.extension);
       const parsedSource = { file: entry.file, ...parsed };
       if (parsed.bill) {
         parsedSource.sourceFamily = "bill";
@@ -158,14 +168,12 @@ async function loadFiles(files) {
               ? `已识别，但当前缺少${billYear}年国网时段数据`
               : `已识别，但${(parsed.bill.warnings || []).at(-1) || "请校正识别信息"}`;
       } else {
-        const firstSheet = HourlyEngine.normalizeSourceSheet(parsed.workbook.sheets[0]);
-        parsedSource.sourceFamily = parsed.image ? "image" : firstSheet.sourceLayout;
+        const firstSheet = normalizeSourceSheet(parsedSource, parsed.workbook.sheets[0]);
+        parsedSource.sourceFamily = firstSheet.sourceLayout;
         const firstSheetRows = parsed.workbook.sheets[0]?.rows.length || 0;
-        entry.status = parsed.image
-          ? `已识别图片 · ${parsed.image.months.length} 个月 · 24 小时${parsed.image.warnings.length ? "（存在识别提示）" : ""}`
-          : firstSheet.sourceLayout === "monthly-matrix"
-            ? `已识别月度24小时表 · ${firstSheet.sourceMonthCount} 个月`
-            : `${parsed.workbook.sheets.length} 个工作表，约 ${Math.max(0, firstSheetRows - 1).toLocaleString("zh-CN")} 行`;
+        entry.status = firstSheet.sourceLayout === "monthly-matrix"
+          ? `已识别月度24小时表 · ${firstSheet.sourceMonthCount} 个月`
+          : `${parsed.workbook.sheets.length} 个工作表，约 ${Math.max(0, firstSheetRows - 1).toLocaleString("zh-CN")} 行`;
       }
       parsedSources.push(parsedSource);
     } catch (error) {
@@ -200,17 +208,7 @@ async function loadFiles(files) {
   if (!resultPanel.hidden) resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function formatImageProgress(message) {
-  if (!message) return "正在识别图片";
-  if (message.status === "recognizing text") {
-    return `正在识别图片 ${Math.round(Number(message.progress || 0) * 100)}%`;
-  }
-  if (/language/i.test(message.status || "")) return "正在加载图片识别模型";
-  if (/initializing|loading tesseract core/i.test(message.status || "")) return "正在启动图片识别";
-  return "正在识别图片";
-}
-
-async function parseFile(file, extension, onProgress) {
+async function parseFile(file, extension) {
   if (extension === "pdf") {
     if (!globalThis.PdfBillParser) throw new Error("PDF账单读取组件未加载，请刷新页面后重试。");
     const bill = await globalThis.PdfBillParser.parse(file);
@@ -224,10 +222,6 @@ async function parseFile(file, extension, onProgress) {
   }
   if (extension === "xls" || extension === "xlsx") {
     return { workbook: await HourlyEngine.parseXlsx(await file.arrayBuffer(), JSZip) };
-  }
-  if (["png", "jpg", "jpeg", "webp"].includes(extension)) {
-    if (!globalThis.ImageTableParser) throw new Error("图片识别组件未加载，请刷新页面后重试。");
-    return globalThis.ImageTableParser.parse(file, onProgress);
   }
   return { workbook: HourlyEngine.parseCsv(decodeText(await file.arrayBuffer())) };
 }
@@ -510,12 +504,12 @@ function prepareSources() {
   }
   currentSourceFamily = sourceFamilies[0] || "";
   currentSourceIsBill = currentSourceFamily === "bill";
-  currentSourceHasMonthlyMatrix = ["monthly-matrix", "image"].includes(currentSourceFamily);
+  currentSourceHasMonthlyMatrix = currentSourceFamily === "monthly-matrix";
   if (usableSources.length === 1) {
     const source = usableSources[0];
     const workbook = source.workbook;
     const matchingIndex = workbook.sheets.findIndex((sheet) => {
-      const normalized = HourlyEngine.normalizeSourceSheet(sheet);
+      const normalized = normalizeSourceSheet(source, sheet);
       const analysis = HourlyEngine.analyzeSheet(normalized.rows);
       const mapping = HourlyEngine.guessMapping(analysis.headers);
       return Object.values(mapping).every((columnIndex) => columnIndex >= 0);
@@ -526,7 +520,7 @@ function prepareSources() {
 
   currentSheet = HourlyEngine.combineSheets(
     usableSources.map((source) => {
-      const sheet = HourlyEngine.normalizeSourceSheet(source.workbook.sheets[0]);
+      const sheet = normalizeSourceSheet(source, source.workbook.sheets[0]);
       return {
         name: source.file.name,
         sheetName: sheet.name,
@@ -541,14 +535,10 @@ function prepareSources() {
 
 function selectSingleSheet(source, index) {
   const originalSheet = source.workbook.sheets[index];
-  currentSheet = HourlyEngine.normalizeSourceSheet(originalSheet);
-  currentSourceFamily = source.bill
-    ? "bill"
-    : source.image
-      ? "image"
-      : currentSheet.sourceLayout;
+  currentSheet = normalizeSourceSheet(source, originalSheet);
+  currentSourceFamily = source.bill ? "bill" : currentSheet.sourceLayout;
   currentSourceIsBill = currentSourceFamily === "bill";
-  currentSourceHasMonthlyMatrix = ["monthly-matrix", "image"].includes(currentSourceFamily);
+  currentSourceHasMonthlyMatrix = currentSourceFamily === "monthly-matrix";
   const layoutLabel = currentSheet.sourceLayout === "wide"
     ? `横向分时格式 · ${currentSheet.sourceTimeColumnCount} 个时点列`
     : currentSheet.sourceLayout === "monthly-matrix"
@@ -634,6 +624,7 @@ function renderResult(result) {
       mapping: getMapping(),
       intervalMode: DEFAULT_INTERVAL_MODE,
       company: filterCompany.value || meta.selectedCompany,
+      sourceFamily: currentSourceFamily,
     },
   }));
 }
@@ -1064,8 +1055,7 @@ function preserveSelectValue(select, values, fallback) {
 }
 
 function displayMonthLabel(value) {
-  const match = String(value || "").match(/^2000-(0?[1-9]|1[0-2])$/);
-  return currentSourceFamily === "image" && match ? `${Number(match[1])}月` : value;
+  return value;
 }
 
 function getMonthEnd(month) {
@@ -1389,11 +1379,7 @@ function getSelectedCompanyDownloadResult() {
     showStatus("所选企业没有可导出的月度数据。", true);
     return null;
   }
-  const result = HourlyEngine.transposeMonthlySummary(monthlyResult, { decimalPlaces: 2 });
-  if (currentSourceFamily === "image") {
-    result.headers = result.headers.map((header, index) => index > 0 ? displayMonthLabel(header) : header);
-  }
-  return result;
+  return HourlyEngine.transposeMonthlySummary(monthlyResult, { decimalPlaces: 2 });
 }
 
 function makeMonthlyOutputName(extension) {

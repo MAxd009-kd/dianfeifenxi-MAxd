@@ -146,6 +146,7 @@
   const state = {
     monthly: null,
     company: "",
+    sourceFamily: "",
     sourceMonthIndexes: [],
     availableMonthIndexes: [],
   };
@@ -938,7 +939,10 @@
       : "当前企业没有落在模板覆盖月份内的月度电量，暂不能计算节省。";
     recommendation.classList.toggle("is-saving", totals[4] > 0 && monthIndexes.length > 0);
     recommendation.classList.toggle("is-costlier", totals[4] <= 0 && monthIndexes.length > 0);
-    if (customerReportButton) customerReportButton.disabled = !monthIndexes.length;
+    if (customerReportButton) {
+      customerReportButton.hidden = state.sourceFamily === "bill";
+      customerReportButton.disabled = state.sourceFamily === "bill" || !monthIndexes.length;
+    }
   }
 
   async function downloadCustomerReport() {
@@ -1040,6 +1044,7 @@
       companyFilter: company,
     });
     state.company = company;
+    state.sourceFamily = detail.sourceFamily || "";
     state.sourceMonthIndexes = [...new Set(state.monthly.rows
       .map((row) => monthIndexFromKey(row[1]))
       .filter((index) => index >= 0))].sort((a, b) => a - b);

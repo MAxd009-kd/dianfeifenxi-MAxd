@@ -16,15 +16,14 @@
         <h1>时能智析</h1>
         <p class="product-name-en">TimeGrid AI</p>
         <p class="developer-credit">Developed by <strong>MAxd-KD</strong></p>
-        <p class="intro">批量整理表格、国网账单和图片中的24小时分时数据，分析用电曲线与购电成本。文件仅在当前设备处理。</p>
+        <p class="intro">批量整理表格和国网账单中的24小时分时数据，分析用电曲线与购电成本。文件仅在当前设备处理。</p>
         <details class="quick-guide">
           <summary>查看源数据要求</summary>
           <ul>
             <li>至少包含企业或对象名称、日期、时点、电量数值四类字段。</li>
             <li>支持常见字段别名，导入后自动识别企业、日期、时点和电量字段。</li>
             <li>支持每天一行、后接 96 个分时列的横向格式，并自动展开处理。</li>
-            <li>支持“月份为列、24小时为行”的月度汇总 Excel；缺少企业名称时统一使用“电力用户”。</li>
-            <li>支持清晰的 PNG、JPG、JPEG、WebP 表格图片；图片需完整包含月份和 24 行分时数据。</li>
+            <li>支持“月份为列、24小时为行”的月度汇总 Excel；缺少企业名称时自动使用文件名（不含扩展名）。</li>
             <li>支持 5、15、30、60 分钟等分时数据，系统会自动汇总到 24 小时。</li>
             <li>同一企业分散在多个文件时会按企业名称自动合并；建议保持相同计量单位。</li>
             <li>PDF账单需包含企业名称、账单月份、总用电量以及尖峰、峰、平、谷电量或比例。</li>
@@ -41,7 +40,7 @@
         </div>
 
         <label class="drop-zone" id="drop-zone" for="file-input">
-          <input id="file-input" type="file" accept=".xls,.xlsx,.csv,.tsv,.pdf,.png,.jpg,.jpeg,.webp" multiple />
+          <input id="file-input" type="file" accept=".xls,.xlsx,.csv,.tsv,.pdf" multiple />
           <span class="upload-mark" aria-hidden="true">＋</span>
           <strong>将多个文件拖到这里</strong>
           <span>或点击选择多个文件</span>
@@ -336,7 +335,7 @@
       </section>
 
       <footer class="page-footer">
-        <span>时能智析 · TimeGrid AI · 通用版 5.4</span>
+        <span>时能智析 · TimeGrid AI · 通用版 5.5</span>
         <span>开发作者 MAxd-KD</span>
         <span>所有文件均在当前设备本地处理</span>
       </footer>
@@ -350,9 +349,7 @@
     <script src="pdf-bill.js?v=20260920-2"></script>
     <script src="tou-template.js?v=20260918-3"></script>
     <script src="report.js?v=20260921-4"></script>
-    <script src="ocr/tesseract.min.js?v=7.0.0"></script>
-    <script src="image-ocr.js?v=20260920-8"></script>
-    <script src="app.js?v=20260920-4"></script>
-    <script src="tou-analysis.js?v=20260921-2"></script>
+    <script src="app.js?v=20260921-2"></script>
+    <script src="tou-analysis.js?v=20260921-3"></script>
   </body>
 </html>
